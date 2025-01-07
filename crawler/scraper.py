@@ -15,7 +15,7 @@ time.sleep(5) # 페이지 로딩 대기 (필요 시 조정)
 
 # 검색창에 상호명 입력
 search_box = driver.find_element(By.CLASS_NAME, "input_search")
-search_box.send_keys("스타벅스") # 검색할 상호명 입력
+search_box.send_keys("우이초등학교") # 검색할 상호명 입력
 time.sleep(1) # 대기 (필요 시 추가)
 
 # 검색 (enter 키 누르기)
