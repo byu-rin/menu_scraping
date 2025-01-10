@@ -25,7 +25,7 @@ app.use(cors({
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"
+    "default-src 'self'; script-src 'self'; style-src 'self';"
   );
   next();
 });
@@ -51,7 +51,11 @@ app.get("/menu_result", (req, res) => {
 // Naver API 호출 라우트
 app.get("/api/search", async (req, res) => {
   const query = req.query.query;
-  const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=1&sort=random`;
+  if (!query) {
+    return res.status(400).json({ error: "Query parameter is required" });
+  }
+
+  const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=10&start=1&sort=random`;
 
   try {
     const response = await fetch(url, {
@@ -63,13 +67,14 @@ app.get("/api/search", async (req, res) => {
     });
 
     if (!response.ok) {
+      console.error(`API 응답 오류: ${response.status}`);
       throw new Error(`Naver API responded with status ${response.status}`);
     }
 
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    console.error("Error fetching data from Naver API:", error);
+    console.error("API 호출 오류:", error);
     res.status(500).send("Internal Server Error");
   }
 });
