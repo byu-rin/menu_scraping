@@ -19,7 +19,10 @@ document.getElementById('searchButton').addEventListener('click', async function
             data.items.forEach(item => {
                 const listItem = document.createElement('div');
                 listItem.className = 'list-item';
-                listItem.textContent = `${item.title} (${item.roadAddress})`;
+
+                const cleanTitle = item.title.replace(/<[^>]+>/g, ''); // <b> 태그 제거
+                listItem.textContent = `${cleanTitle} (${item.roadAddress})`;
+
                 resultList.appendChild(listItem);
             });
         } else {
