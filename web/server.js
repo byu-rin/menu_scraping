@@ -1,20 +1,19 @@
-import express from "express";
-import cors from "cors";
-import fetch from "node-fetch";
-import path from "path";
-import { fileURLToPath } from "url";
-import config from "/Users/byurin/scraper/byurin.mjs";
+import express from 'express';
+import cors from 'cors';
+import fetch from 'node-fetch';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import config from '/Users/byurin/scraper/byurin.mjs';
 
 const app = express();
 const PORT = 3000;
+const { CLIENT_ID, CLIENT_SECRET } = config;
 
 // __dirname 설정 (ES 모듈에서 __dirname 직접 사용 불가)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CLIENT_ID = config.CLIENT_ID;
-const CLIENT_SECRET = config.CLIENT_SECRET;
-
+// 미들웨어 설정
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST'],
@@ -30,30 +29,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// 정적
+// 정적 파일 서비스
 app.use(express.static(path.join(__dirname, 'public')));
 
-// search page
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'search.html'));
-});
+// 라우팅 설정
+const sendFile = (filename) => (req, res) => res.sendFile(path.join(__dirname, 'public', filename));
 
-// input page
-app.get("/menu_input", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'menu_input.html'));
-});
-
-// result page
-app.get("/menu_result", (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'menu_result.html'));
-});
+app.get("/", sendFile('search.html'));
+app.get("/menu_input", sendFile('menu_input.html'));
+app.get("/menu_result", sendFile('menu_result.html'));
 
 // Naver API 호출 라우트
 app.get("/api/search", async (req, res) => {
-  const query = req.query.query;
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter is required" });
-  }
+  const { query } = req.query;
+  if (!query) return res.status(400).json({ error: "Query parameter is required" });
 
   const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=10&start=1&sort=random`;
 
@@ -66,10 +55,7 @@ app.get("/api/search", async (req, res) => {
       },
     });
 
-    if (!response.ok) {
-      console.error(`API 응답 오류: ${response.status}`);
-      throw new Error(`Naver API responded with status ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Naver API responded with status ${response.status}`);
 
     const data = await response.json();
     res.json(data);
