@@ -47,6 +47,31 @@ try:
     )
     menu_tab.click()
 
+    # 메뉴 항목 크롤링
+    menu_items = WebDriverWait(driver, 10).until(
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".E2jtL"))
+    )
+
+    for item in menu_items:
+        # 메뉴명
+        menu_name = item.find_element(By.CSS_SELECTOR, ".lPzHi").text
+
+        # 대표 여부
+        is_representative = "대표" if item.find_elements(By.CSS_SELECTOR, ".place_blind") else "일반"
+
+        # 메뉴 설명
+        description = item.find_element(By.CSS_SELECTOR, ".kPogF").text
+
+        # 가격
+        price = item.find_element(By.CSS_SELECTOR, ".GXS1X em").text
+
+        # 출력
+        print(f"메뉴명: {menu_name}")
+        print(f"대표: {is_representative}")
+        print(f"설명: {description}")
+        print(f"가격: {price}원")
+        print("-" * 30)
+
 except Exception as e:
     print(f"에러 발생: {e}")
 
