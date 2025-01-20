@@ -44,7 +44,7 @@ app.get("/api/search", async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: "Query parameter is required" });
 
-  const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=10&start=1&sort=random`;
+  const url = `https://openapi.naver.com/v1/search/local.json?query=${encodeURIComponent(query)}&display=5&start=1&sort=random`;
 
   try {
     const response = await fetch(url, {
