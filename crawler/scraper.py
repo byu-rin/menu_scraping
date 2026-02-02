@@ -1,80 +1,99 @@
+#!/usr/bin/env python3
+"""네이버 지도 음식점 메뉴 크롤러"""
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 
-# ChromeDriver 설정
-service = Service("/opt/homebrew/bin/chromedriver")
-options = webdriver.ChromeOptions()
-# driver = webdriver.Chrome(service=service, options=options)
-driver = webdriver.Chrome()
 
-try:
-    # Naver Map 열기
-    driver.get("https://map.naver.com/v5/")
-    WebDriverWait(driver, 20).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "input_search"))
-    )
+def crawl_menu(restaurant_name):
+    """음식점 메뉴를 크롤링하여 출력"""
 
-    # 검색어 입력
-    search_box = driver.find_element(By.CLASS_NAME, "input_search")
-    search_box.send_keys("후라토식당 잠실직영점")  # 상호명 입력
-    search_box.send_keys(Keys.RETURN)
+    # ChromeDriver 자동 설정
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")  # 브라우저 창 숨김
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
 
-    # iframe 로드 대기 및 출력
-    time.sleep(5)  # 초기 로딩 대기
-    #디버깅
-    # frames = driver.find_elements(By.TAG_NAME, "iframe")
-    # print(f"발견된 iframe 개수: {len(frames)}")
-    # for i, frame in enumerate(frames):
-    #     print(f"Frame {i}: {frame.get_attribute('id')} {frame.get_attribute('name')}")
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
 
-    # 첫 번째 iframe으로 전환 (디버깅)
-    # if frames:
-    #     driver.switch_to.frame(frames[0])
-    #     print("iframe 전환 성공")
-    # else:
-    #     print("iframe이 발견되지 않았습니다.")
+    try:
+        print(f"\n'{restaurant_name}' 검색 중...")
 
-    driver.switch_to.frame("entryIframe")
+        # Naver Map 열기
+        driver.get("https://map.naver.com/v5/")
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "input_search"))
+        )
 
-    # menu tab click
-    menu_tab = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, "//span[text()='메뉴']"))
-    )
-    menu_tab.click()
+        # 검색어 입력
+        search_box = driver.find_element(By.CLASS_NAME, "input_search")
+        search_box.send_keys(restaurant_name)
+        search_box.send_keys(Keys.RETURN)
 
-    # 메뉴 항목 크롤링
-    menu_items = WebDriverWait(driver, 10).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".E2jtL"))
-    )
+        # iframe 로드 대기
+        time.sleep(5)
+        driver.switch_to.frame("entryIframe")
 
-    for item in menu_items:
-        # 메뉴명
-        menu_name = item.find_element(By.CSS_SELECTOR, ".lPzHi").text
+        # menu tab click
+        menu_tab = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//span[text()='메뉴']"))
+        )
+        menu_tab.click()
 
-        # 대표 여부
-        is_representative = "대표" if item.find_elements(By.CSS_SELECTOR, ".place_blind") else "일반"
+        # 메뉴 항목 크롤링
+        menu_items = WebDriverWait(driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".E2jtL"))
+        )
 
-        # 메뉴 설명
-        description = item.find_element(By.CSS_SELECTOR, ".kPogF").text
+        print(f"\n{'='*50}")
+        print(f" {restaurant_name} 메뉴")
+        print(f"{'='*50}\n")
 
-        # 가격
-        price = item.find_element(By.CSS_SELECTOR, ".GXS1X em").text
+        for item in menu_items:
+            # 메뉴명
+            menu_name = item.find_element(By.CSS_SELECTOR, ".lPzHi").text
 
-        # 출력
-        print(f"메뉴명: {menu_name}")
-        print(f"대표: {is_representative}")
-        print(f"설명: {description}")
-        print(f"가격: {price}원")
-        print("-" * 30)
+            # 대표 여부
+            is_representative = "⭐ 대표" if item.find_elements(By.CSS_SELECTOR, ".place_blind") else ""
 
-except Exception as e:
-    print(f"에러 발생: {e}")
+            # 메뉴 설명
+            try:
+                description = item.find_element(By.CSS_SELECTOR, ".kPogF").text
+            except:
+                description = ""
 
-finally:
-    input("\n스크래핑 완료. 브라우저를 닫으려면 Enter를 누르세요...")
-    driver.quit()
+            # 가격
+            try:
+                price = item.find_element(By.CSS_SELECTOR, ".GXS1X em").text
+            except:
+                price = "가격 정보 없음"
+
+            # 출력
+            print(f"  {menu_name} {is_representative}")
+            if description:
+                print(f"    {description}")
+            print(f"    {price}원")
+            print()
+
+        print(f"{'='*50}")
+
+    except Exception as e:
+        print(f"에러 발생: {e}")
+
+    finally:
+        driver.quit()
+
+
+if __name__ == "__main__":
+    restaurant = input("음식점명을 입력하세요: ")
+    if restaurant.strip():
+        crawl_menu(restaurant.strip())
+    else:
+        print("음식점명을 입력해주세요.")
